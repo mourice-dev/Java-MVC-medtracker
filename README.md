@@ -2,6 +2,8 @@
 
 # MedicTrack – Hospital Management System
 
+Commit for January 28, 2026: Initial project setup.
+
 **MedicTrack** is a web-based **Hospital Management System** designed to simplify and automate daily hospital operations. The system provides a centralized platform where administrators, doctors, and hospital staff can efficiently manage patients, appointments, medical records, and hospital resources.
 
 ## Key Features
