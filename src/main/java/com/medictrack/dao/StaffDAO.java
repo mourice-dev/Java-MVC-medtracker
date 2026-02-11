@@ -12,15 +12,15 @@ public class StaffDAO {
     public List<Staff> getAllStaff() {
         List<Staff> staffList = new ArrayList<>();
         String sql = "SELECT u.id as user_id, u.full_name, u.email, u.role, " +
-                     "sd.id, sd.department, sd.specialty, sd.shift_start, sd.shift_end, sd.status " +
-                     "FROM users u LEFT JOIN staff_details sd ON u.id = sd.user_id " +
-                     "WHERE u.role IN ('DOCTOR', 'NURSE', 'STAFF') " +
-                     "ORDER BY u.full_name";
-        
+                "sd.id, sd.department, sd.specialty, sd.shift_start, sd.shift_end, sd.status " +
+                "FROM users u LEFT JOIN staff_details sd ON u.id = sd.user_id " +
+                "WHERE u.role IN ('DOCTOR', 'NURSE', 'STAFF') " +
+                "ORDER BY u.full_name";
+
         try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+
             while (rs.next()) {
                 Staff s = new Staff();
                 s.setId(rs.getInt("id"));
@@ -44,11 +44,11 @@ public class StaffDAO {
     public List<User> getAllDoctors() {
         List<User> doctors = new ArrayList<>();
         String sql = "SELECT * FROM users WHERE role = 'DOCTOR' ORDER BY full_name";
-        
+
         try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+
             while (rs.next()) {
                 User u = new User();
                 u.setId(rs.getInt("id"));
@@ -65,16 +65,16 @@ public class StaffDAO {
 
     public Staff getStaffByUserId(int userId) {
         String sql = "SELECT u.id as user_id, u.full_name, u.email, u.role, " +
-                     "sd.id, sd.department, sd.specialty, sd.shift_start, sd.shift_end, sd.status " +
-                     "FROM users u LEFT JOIN staff_details sd ON u.id = sd.user_id " +
-                     "WHERE u.id = ?";
-        
+                "sd.id, sd.department, sd.specialty, sd.shift_start, sd.shift_end, sd.status " +
+                "FROM users u LEFT JOIN staff_details sd ON u.id = sd.user_id " +
+                "WHERE u.id = ?";
+
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
-            
+
             if (rs.next()) {
                 Staff s = new Staff();
                 s.setId(rs.getInt("id"));
@@ -100,12 +100,12 @@ public class StaffDAO {
         String checkSql = "SELECT id FROM staff_details WHERE user_id = ?";
         String insertSql = "INSERT INTO staff_details (user_id, department, specialty, shift_start, shift_end, status) VALUES (?, ?, ?, ?, ?, ?)";
         String updateSql = "UPDATE staff_details SET department=?, specialty=?, shift_start=?, shift_end=?, status=? WHERE user_id=?";
-        
+
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement checkStmt = conn.prepareStatement(checkSql);
             checkStmt.setInt(1, staff.getUserId());
             ResultSet rs = checkStmt.executeQuery();
-            
+
             if (rs.next()) {
                 // Update existing
                 PreparedStatement updateStmt = conn.prepareStatement(updateSql);
@@ -131,5 +131,67 @@ public class StaffDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public List<Staff> searchStaff(String keyword, String role, String department, String status) {
+        List<Staff> staffList = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT u.id as user_id, u.full_name, u.email, u.role, " +
+                "sd.id, sd.department, sd.specialty, sd.shift_start, sd.shift_end, sd.status " +
+                "FROM users u LEFT JOIN staff_details sd ON u.id = sd.user_id " +
+                "WHERE u.role IN ('DOCTOR', 'NURSE', 'STAFF') ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (u.full_name LIKE ? OR u.email LIKE ?) ");
+            String pattern = "%" + keyword.trim() + "%";
+            params.add(pattern);
+            params.add(pattern);
+        }
+
+        if (role != null && !role.trim().isEmpty()) {
+            sql.append("AND u.role = ? ");
+            params.add(role);
+        }
+
+        if (department != null && !department.trim().isEmpty()) {
+            sql.append("AND sd.department LIKE ? ");
+            params.add("%" + department.trim() + "%");
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append("AND sd.status = ? ");
+            params.add(status);
+        }
+
+        sql.append("ORDER BY u.full_name");
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            }
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Staff s = new Staff();
+                s.setId(rs.getInt("id"));
+                s.setUserId(rs.getInt("user_id"));
+                s.setFullName(rs.getString("full_name"));
+                s.setEmail(rs.getString("email"));
+                s.setRole(rs.getString("role"));
+                s.setDepartment(rs.getString("department"));
+                s.setSpecialty(rs.getString("specialty"));
+                s.setShiftStart(rs.getString("shift_start"));
+                s.setShiftEnd(rs.getString("shift_end"));
+                s.setStatus(rs.getString("status") != null ? rs.getString("status") : "Off Duty");
+                staffList.add(s);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return staffList;
     }
 }

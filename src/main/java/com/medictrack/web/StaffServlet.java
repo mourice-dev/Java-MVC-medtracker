@@ -22,11 +22,11 @@ public class StaffServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         // All session/user checks removed for unrestricted access
 
         String action = request.getParameter("action");
-        
+
         if ("edit".equals(action)) {
             int userId = Integer.parseInt(request.getParameter("userId"));
             Staff staff = staffDAO.getStaffByUserId(userId);
@@ -34,38 +34,54 @@ public class StaffServlet extends HttpServlet {
             request.setAttribute("editMode", true);
         }
 
-        List<Staff> staffList = staffDAO.getAllStaff();
+        String keyword = request.getParameter("keyword");
+        String role = request.getParameter("role");
+        String department = request.getParameter("department");
+        String status = request.getParameter("status");
+
+        request.setAttribute("keyword", keyword);
+        request.setAttribute("filterRole", role);
+        request.setAttribute("filterDepartment", department);
+        request.setAttribute("filterStatus", status);
+
+        List<Staff> staffList;
+        if ((keyword != null && !keyword.isEmpty()) || (role != null && !role.isEmpty()) ||
+                (department != null && !department.isEmpty()) || (status != null && !status.isEmpty())) {
+            staffList = staffDAO.searchStaff(keyword, role, department, status);
+        } else {
+            staffList = staffDAO.getAllStaff();
+        }
         request.setAttribute("staffList", staffList);
-        request.getRequestDispatcher("staff.jsp").forward(request, response);
+        request.getRequestDispatcher("staff_v3.jsp").forward(request, response);
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         // All session/user checks removed for unrestricted access
 
         String action = request.getParameter("action");
-        
+
         if ("update".equals(action)) {
             int userId = Integer.parseInt(request.getParameter("userId"));
-            
+
             Staff staff = new Staff();
             staff.setUserId(userId);
             staff.setDepartment(request.getParameter("department"));
             staff.setSpecialty(request.getParameter("specialty"));
-            
+
             String shiftStartStr = request.getParameter("shiftStart");
             if (shiftStartStr != null && !shiftStartStr.isEmpty()) {
                 staff.setShiftStart(shiftStartStr);
             }
-            
+
             String shiftEndStr = request.getParameter("shiftEnd");
             if (shiftEndStr != null && !shiftEndStr.isEmpty()) {
                 staff.setShiftEnd(shiftEndStr);
             }
-            
+
             staff.setStatus(request.getParameter("status"));
-            
+
             staffDAO.updateStaffDetails(staff);
         }
 

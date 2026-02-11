@@ -23,7 +23,10 @@
       <div class="flex-1 flex flex-col h-full overflow-hidden">
         <!-- Top Header -->
         <!-- Top Header -->
-        <jsp:include page="components/header.jsp" />
+        <jsp:include page="components/header.jsp">
+          <jsp:param name="searchAction" value="patients" />
+          <jsp:param name="searchPlaceholder" value="Search patients..." />
+        </jsp:include>
 
         <!-- Scrollable Content Area -->
         <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
